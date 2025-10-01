@@ -1,0 +1,14 @@
+WWWWWWWWWWW
+W         W
+W     W   W
+W    WW   W
+WRRW      W
+W  R      W
+WWWWWWWWWWW
+
+P,4,4,0,-1,0,1
+G,2,5,0,-1,0
+L,1,4,1,0,0
+G,1,0,0,1,@
+G,C,S,S,E,0
+L,1,9,0,-1,0

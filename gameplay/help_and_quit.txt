@@ -1,0 +1,165 @@
+--------------------------------------------------------------------------------
+                                    We Tank!                                    
+--------------------------------------------------------------------------------
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                +-+   +-+   +-+                                 
+                                | |[P>| |[L]| |                                 
+                                +-+   +-+ v +-+                                 
+                                +-+##/ ^    +-+                                 
+                                | |#/#[G]   | |                                 
+                                +-+/##      +-+                                 
+                                +-+         +-+                                 
+                                | |         | |                                 
+                                +-+         +-+                                 
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                                                                
+                                                                                
+ [P] Armour: 2                                       Enemy Tanks Remaining: 2   
+                                                                                
+                                                                                
+Its time to tank!
+Please enter a command (help for list of valid commands): help
+Commands: 
+ - `move [forward|back]`: Move tank in specified direction.
+ - `turn [left|right]`: Turn tank 90 degrees in specified direction.
+ - `wait`: Do nothing this turn.
+ - `fire`: Fire!
+ - `save F`: Save game to F
+ - `load F`: Load game from F
+ - `help`: Print this help message.
+ - `quit`: Exit Game.
+Please enter a command (help for list of valid commands): move forward
+--------------------------------------------------------------------------------
+                                    We Tank!                                    
+--------------------------------------------------------------------------------
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                +-+   +-+   +-+                                 
+                                | |[P>| |   | |                                 
+                                +-+   +-+   +-+                                 
+                                +-+##/      +-+                                 
+                                | |#/#<G]   | |                                 
+                                +-+/##      +-+                                 
+                                +-+         +-+                                 
+                                | |      [L]| |                                 
+                                +-+       v +-+                                 
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                                                                
+                                                                                
+ [P] Armour: 2                                       Enemy Tanks Remaining: 2   
+                                                                                
+                                                                                
+Please enter a command (help for list of valid commands): move back
+--------------------------------------------------------------------------------
+                                    We Tank!                                    
+--------------------------------------------------------------------------------
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                +-+   +-+   +-+                                 
+                                | |[P>| |   | |                                 
+                                +-+   +-+   +-+                                 
+                                +-+##/      +-+                                 
+                                | |#/#[G]   | |                                 
+                                +-+/## v    +-+                                 
+                                +-+       ^ +-+                                 
+                                | |      [L]| |                                 
+                                +-+         +-+                                 
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                                                                
+                                                                                
+ [P] Armour: 2                                       Enemy Tanks Remaining: 2   
+                                                                                
+                                                                                
+Please enter a command (help for list of valid commands): turn right
+--------------------------------------------------------------------------------
+                                    We Tank!                                    
+--------------------------------------------------------------------------------
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                +-+   +-+ ^ +-+                                 
+                                | |[P]| |[L]| |                                 
+                                +-+ v +-+   +-+                                 
+                                +-+##/      +-+                                 
+                                | |#/#[G>   | |                                 
+                                +-+/##      +-+                                 
+                                +-+         +-+                                 
+                                | |         | |                                 
+                                +-+         +-+                                 
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                                                                
+                                                                                
+ [P] Armour: 2                                       Enemy Tanks Remaining: 2   
+                                                                                
+                                                                                
+Please enter a command (help for list of valid commands): fire
+--------------------------------------------------------------------------------
+                                    We Tank!                                    
+--------------------------------------------------------------------------------
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                +-+   +-+   +-+                                 
+                                | |[P]| |[L]| |                                 
+                                +-+ v +-+ v +-+                                 
+                                +-+    ^    +-+                                 
+                                | |   [G]   | |                                 
+                                +-+         +-+                                 
+                                +-+         +-+                                 
+                                | |         | |                                 
+                                +-+         +-+                                 
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                                                                
+                                                                                
+ [P] Armour: 2                                       Enemy Tanks Remaining: 2   
+                                                                                
+                                                                                
+Please enter a command (help for list of valid commands): help
+Commands: 
+ - `move [forward|back]`: Move tank in specified direction.
+ - `turn [left|right]`: Turn tank 90 degrees in specified direction.
+ - `wait`: Do nothing this turn.
+ - `fire`: Fire!
+ - `save F`: Save game to F
+ - `load F`: Load game from F
+ - `help`: Print this help message.
+ - `quit`: Exit Game.
+Please enter a command (help for list of valid commands): move forward
+--------------------------------------------------------------------------------
+                                    We Tank!                                    
+--------------------------------------------------------------------------------
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                +-+   +-+   +-+                                 
+                                | |   | |   | |                                 
+                                +-+   +-+   +-+                                 
+                                +-+         +-+                                 
+                                | |[P]<G]   | |                                 
+                                +-+ v       +-+                                 
+                                +-+         +-+                                 
+                                | |      [L]| |                                 
+                                +-+       v +-+                                 
+                                +-++-++-++-++-+                                 
+                                | || || || || |                                 
+                                +-++-++-++-++-+                                 
+                                                                                
+                                                                                
+ [P] Armour: 2                                       Enemy Tanks Remaining: 2   
+                                                                                
+                                                                                
+Please enter a command (help for list of valid commands): quit
