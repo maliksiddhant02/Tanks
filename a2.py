@@ -13,11 +13,16 @@ from display import WTView
 def main() -> None:
     pass
 
+
 if __name__ == "__main__":
     main()
 
+
+# --------------------- TILE CLASSES ---------------------
 class Tile:
-    def __init__(self, tile_id=TILE_ID, blocking=False):
+    """Base class for all tiles in the battlefield."""
+
+    def __init__(self, tile_id: str = TILE_ID, blocking: bool = False):
         self.tile_id = tile_id
         self.blocking = blocking
 
@@ -30,15 +35,24 @@ class Tile:
     def is_blocking(self) -> bool:
         return self.blocking
 
+
 class Floor(Tile):
+    """Floor tile — always non-blocking."""
+
     def __init__(self):
         super().__init__(FLOOR_ID, False)
 
+
 class Wall(Tile):
+    """Wall tile — always blocking."""
+
     def __init__(self):
         super().__init__(WALL_ID, True)
 
+
 class Rock(Tile):
+    """Rock tile — can be destroyed to become non-blocking."""
+
     def __init__(self, is_destroyed: bool):
         super().__init__(tile_id=ROCK_ID, blocking=not is_destroyed)
         self._destroyed = is_destroyed
@@ -57,8 +71,11 @@ class Rock(Tile):
         self.tile_id = DESTROYED_ID
         self.blocking = False
 
+
 # --------------------- TANK CLASSES ---------------------
 class Tank:
+    """Base class for all tanks (player or enemies)."""
+
     TANK_ID = TANK_ID  # default identifier
 
     def __init__(self, position: Position, heading: Heading, speed: int):
@@ -105,8 +122,22 @@ class Tank:
         row, col = self._heading
         self._heading = (col, -row)
 
+    def get_symbol(self) -> str:
+        """Return string like [P>], [G<], [L^] based on heading."""
+        heading_map = {
+            (0, 1): '>',
+            (0, -1): '<',
+            (-1, 0): '^',
+            (1, 0): 'v',
+        }
+        char = heading_map.get(self._heading, '?')
+        return f"[{self.TANK_ID}{char}]"
+
+
 class Player(Tank):
-    TANK_ID = PLAYER_ID  # Player symbol
+    """The Player tank."""
+
+    TANK_ID = PLAYER_ID
 
     def __init__(self, position: Position, heading: Heading, speed: int, armour: int):
         super().__init__(position, heading, speed)
@@ -129,35 +160,33 @@ class Player(Tank):
 
     def is_destroyed(self) -> bool:
         return self._armour <= 0
-    
+
+    def take_damage(self, amount: int = 1):
+        """Reduce armour by amount."""
+        self._armour = max(0, self._armour - amount)
+
     # ---- Heading Utilities ----
     def reverse_heading(self):
-        """Reverse the current heading of the player."""
         dx, dy = self._heading
         self._heading = (-dx, -dy)
-    
-class Enemy(Tank):
-    TANK_ID = ENEMY_ID
 
-    def __init__(self, position: Position, heading: Heading, speed: int):
-        super().__init__(position, heading, speed)
+
+class Enemy(Tank):
+    """Base class for all enemies."""
+
+    TANK_ID = ENEMY_ID
 
     def __repr__(self) -> str:
         return f"Enemy({self._position}, {self._heading}, {self._speed})"
 
-    def __str__(self) -> str:
-        row, col = self._position
-        h_row, h_col = self._heading
-        return f"{self.get_id()},{row},{col},{h_row},{h_col},{self._speed}"
-
-    # ---- Enemy-specific actions ----
     def take_action(self, visible_tiles: list[Tile]):
-        # Abstract enemies do nothing by default
+        """Default: enemies do nothing."""
         pass
 
     def apply_effect(self, target: Tank):
-        # Abstract enemies do nothing by default
+        """Default: enemies do nothing."""
         pass
+
 
 class Guard(Enemy):
     TANK_ID = GUARD_ID
@@ -166,15 +195,15 @@ class Guard(Enemy):
         super().__init__(position, heading, speed)
 
     def __repr__(self) -> str:
+        # Ensure correct class name
         return f"Guard({self._position}, {self._heading}, {self._speed})"
 
     def take_action(self, visible_tiles: list[Tile]):
-        # Guard always turns left
         self.turn_left()
 
     def apply_effect(self, target: Tank):
-        # Set target speed to -2
         target.set_speed(-2)
+
 
 class Patrol(Enemy):
     TANK_ID = PATROL_ID
@@ -188,22 +217,29 @@ class Patrol(Enemy):
 
     def take_action(self, visible_tiles: list[Tile]):
         if len(visible_tiles) > 2:
+            # Enough space: move forward
             self.set_speed(self.DESIRED_SPEED)
         else:
-            # Rotate 180°: two left turns
-            self.turn_left()
-            self.turn_left()
+            # Not enough space: reverse heading
+            row, col = self.get_heading()
+            self.set_heading((-row, -col))
+            self.set_speed(self.DESIRED_SPEED)
 
     def apply_effect(self, target: Tank):
-        # Rotate target 180°
-        target.turn_left()
-        target.turn_left()
+        # Reverse target heading vector
+        row, col = target.get_heading()
+        target.set_heading((-row, -col))
 
+
+
+# --------------------- BATTLEFIELD ---------------------
 class Battlefield:
-    def __init__(self, tiles: list[list["Tile"]]):
+    """Represents the battlefield grid."""
+
+    def __init__(self, tiles: list[list[Tile]]):
         self._tiles = tiles
         self._rows = len(tiles)
-        self._cols = len(tiles[0]) if tiles else 0  # handle empty battlefield
+        self._cols = len(tiles[0]) if tiles else 0
 
     def __repr__(self) -> str:
         return f"Battlefield({self._tiles})"
@@ -211,15 +247,14 @@ class Battlefield:
     def __str__(self) -> str:
         return "\n".join("".join(str(tile) for tile in row) for row in self._tiles)
 
-    def get_tiles(self) -> list[list["Tile"]]:
+    def get_tiles(self) -> list[list[Tile]]:
         return self._tiles
 
-    def get_tile(self, pos: "Position") -> "Tile":
-        """Return the tile at the given (x, y) position."""
+    def get_tile(self, pos: Position) -> Tile:
         x, y = pos
         return self._tiles[x][y]
 
-    def get_rocks(self) -> dict["Position", "Rock"]:
+    def get_rocks(self) -> dict[Position, Rock]:
         rocks = {}
         for r, row in enumerate(self._tiles):
             for c, tile in enumerate(row):
@@ -227,78 +262,51 @@ class Battlefield:
                     rocks[(r, c)] = tile
         return rocks
 
-    def in_bounds(self, pos: "Position") -> bool:
+    def in_bounds(self, pos: Position) -> bool:
         x, y = pos
         return 0 <= x < self._rows and 0 <= y < self._cols
 
-    
-    
-class WTModel:
-    """
-    WTModel models the logical state of a game of We Tank!.
-    """
 
-    def __init__(self, battlefield: "Battlefield", player: "Player", enemies: list["Enemy"]):
-        """
-        Initialise a new WTModel instance with battlefield, player, and enemies.
-        Enemies are stored in priority order: first is highest priority.
-        """
+# --------------------- WTModel ---------------------
+class WTModel:
+    """Logical game state for We Tank!"""
+
+    def __init__(self, battlefield: Battlefield, player: Player, enemies: list[Enemy]):
         self._battlefield = battlefield
         self._player = player
         self._enemies = enemies.copy()
 
     def __repr__(self) -> str:
-        """
-        Return a string that can recreate this WTModel instance in a REPL.
-        """
         return f"WTModel({repr(self._battlefield)}, {repr(self._player)}, {repr(self._enemies)})"
 
     def __str__(self) -> str:
-        """
-        Return a string representation of the battlefield, player, and enemies.
-        Battlefield first, followed by two newlines, then player, newline, then enemies.
-        """
         battlefield_str = str(self._battlefield)
         player_str = str(self._player)
-        enemies_str = "\n".join(str(enemy) for enemy in self._enemies)
+        enemies_str = "\n".join(str(e) for e in self._enemies)
         return f"{battlefield_str}\n\n{player_str}\n{enemies_str}" if enemies_str else f"{battlefield_str}\n\n{player_str}"
 
-    def get_battlefield(self) -> "Battlefield":
-        """Return this model's battlefield instance."""
+    def get_battlefield(self) -> Battlefield:
         return self._battlefield
 
-    def get_player(self) -> "Player":
-        """Return this model's player instance."""
+    def get_player(self) -> Player:
         return self._player
 
-    def get_enemies(self) -> list["Enemy"]:
-        """Return the list of enemies in decreasing priority order."""
+    def get_enemies(self) -> list[Enemy]:
         return self._enemies
 
     def has_won(self) -> bool:
-        """Return True if all enemies are destroyed."""
         return len(self._enemies) == 0 and self._player.get_armour() > 0
 
     def has_lost(self) -> bool:
-        """Return True if the player has no armour left."""
         return self._player.get_armour() <= 0
 
-    def tank_positions(self) -> dict["Position", "Tank"]:
-        """
-        Return a dictionary mapping positions to tanks.
-        Includes player and all enemies.
-        """
+    def tank_positions(self) -> dict[Position, Tank]:
         positions = {self._player.get_position(): self._player}
         for enemy in self._enemies:
             positions[enemy.get_position()] = enemy
         return positions
 
-    def visible_positions(self, tank: "Tank") -> list["Position"]:
-        """
-        Return a list of positions visible to the tank, in order of distance.
-        Stops at blocking tile. Includes positions with other tanks.
-        Excludes the tank's own position.
-        """
+    def visible_positions(self, tank: Tank) -> list[Position]:
         positions = []
         x, y = tank.get_position()
         dx, dy = tank.get_heading()
@@ -307,129 +315,312 @@ class WTModel:
         while True:
             x += dx
             y += dy
-
             if not battlefield.in_bounds((x, y)):
                 break
-
-            positions.append((x, y))  # include this position
-
+            positions.append((x, y))
             tile = battlefield.get_tile((x, y))
-
-            # stop if tile blocks visibility
             if tile.is_blocking():
                 break
-
-            # do NOT break on other tanks; they are visible but do not block vision
-
         return positions
 
-    
-    def advance_tank(self, tank: "Tank"):
-        """
-            Move the tank according to its heading and speed.
-            Stop if another tank or blocking tile encountered.
-            Reset tank speed to 0 after movement.
-        """
-    
+    # --- Movement & combat ---
+    def advance_tank(self, tank: Tank):
         speed = tank.get_speed()
-        x, y = tank.get_position()
+        if speed == 0:
+            return
+
         dx, dy = tank.get_heading()
-        
-        for _ in range(speed):
+        steps = speed
+        if speed < 0:
+            dx, dy = -dx, -dy
+            steps = -speed
+
+        occupied = self.tank_positions()
+        occupied.pop(tank.get_position(), None)
+
+        x, y = tank.get_position()
+        for _ in range(steps):
             nx, ny = x + dx, y + dy
-            # blocked by battlefield bounds
             if not self._battlefield.in_bounds((nx, ny)):
                 break
-            # blocked by tile
             tile = self._battlefield.get_tile((nx, ny))
-            if tile.is_blocking():
+            if tile.is_blocking() or (nx, ny) in occupied:
                 break
-            # blocked by another tank
-            if (nx, ny) in self.tank_positions():
-                break
-            # move
             x, y = nx, ny
+
         tank.set_position((x, y))
         tank.set_speed(0)
-    
-    def get_attack_target(self, tank: "Tank") -> "Position":
-        """
-        Return the first tile or tank that would be hit if tank fires.
-        Must be in the tank's visible positions.
-        """
+
+    def get_attack_target(self, tank: Tank) -> Position:
+        occupied = self.tank_positions()
         for pos in self.visible_positions(tank):
-            if pos in self.tank_positions() and self.tank_positions()[pos] != tank:
+            other = occupied.get(pos)
+            if other is not None and other is not tank:
                 return pos
             tile = self._battlefield.get_tile(pos)
             if tile.is_blocking():
                 return pos
         return None
 
-
     def enemy_actions(self):
-        """
-        Process each enemy's action in priority order.
-        Fire if player is visible; otherwise call enemy.take_action(visible_tiles).
-        Apply advance_tank after action. Reduce player armour if hit and reverse
-        player's heading (180 degrees).
-        """
-        for enemy in self._enemies:
+        player_hit = False
+        player_pos = self._player.get_position()
+
+        for enemy in list(self._enemies):
             visible_tiles = self.visible_positions(enemy)
-    
-            # If player is in enemy's line-of-fire, enemy "fires" (even if a blocking tile
-            # is hit first). If the attack target is the player, reduce armour and reverse heading.
-            if self._player.get_position() in visible_tiles:
-                target = self.get_attack_target(enemy)
-                if target == self._player.get_position():
-                    # player got hit: reduce armour (not below 0)
-                    self._player.set_armour(max(0, self._player.get_armour() - 1))
-    
-                    # reverse player's heading 180 degrees
-                    hx, hy = self._player.get_heading()
-                    self._player.set_heading((-hx, -hy))
+            target = self.get_attack_target(enemy)
+
+            if player_pos in visible_tiles and target == player_pos and not player_hit:
+                self._player.take_damage(1)
+                player_hit = True
+                if isinstance(enemy, Guard):
+                    self._player.set_speed(-2)
+                elif isinstance(enemy, Patrol):
+                    self._player.turn_left()
+                    self._player.turn_left()
             else:
-                # Player not visible → enemy performs its AI action.
-                enemy.take_action(visible_tiles)
-    
-            # After the action (or firing), the enemy advances according to its speed.
+                if isinstance(enemy, Guard):
+                    enemy.turn_left()
+                elif isinstance(enemy, Patrol):
+                    if len(visible_tiles) >= 2:
+                        enemy.set_speed(2)
+                    else:
+                        enemy.turn_left()
+                        enemy.turn_left()
+
             self.advance_tank(enemy)
 
-
     def player_fire(self):
-        """
-        Resolve the player firing.
-        Hits the closest visible enemy or blocking tile.
-        Update battlefield and enemies accordingly.
-        """
         target = self.get_attack_target(self._player)
         if target is None:
             return
-        # check for enemy hit
         for enemy in self._enemies:
             if enemy.get_position() == target:
                 self._enemies.remove(enemy)
                 return
-        # check for tile hit
         tile = self._battlefield.get_tile(target)
         if hasattr(tile, "destroy"):
             tile.destroy()
 
     def player_move(self, move: str):
-        """
-        Move or turn the player according to the move command:
-        'left', 'right', 'forward', or 'back'.
-        Movement speed is 1, reset speed to 0 after.
-        """
-        if move == 'left':
+        if move == "left":
             self._player.turn_left()
-        elif move == 'right':
+        elif move == "right":
             self._player.turn_right()
-        elif move == 'forward':
+        elif move == "forward":
             self._player.set_speed(1)
             self.advance_tank(self._player)
-        elif move == 'back':
+        elif move == "back":
             self._player.set_speed(1)
             self._player.reverse_heading()
             self.advance_tank(self._player)
             self._player.reverse_heading()
         self._player.set_speed(0)
+
+    def is_game_over(self) -> bool:
+        return self.has_won() or self.has_lost()
+
+    # --------------------- File I/O ---------------------
+    @classmethod
+    def from_str(cls, s: str) -> "WTModel":
+        """Construct WTModel from string representation."""
+        parts = s.split("\n\n", 1)
+        if len(parts) != 2:
+            raise ValueError(INVALID_TILE_MSG)
+
+        battlefield_block, entities_block = parts
+        battlefield_rows = [line.rstrip("\n") for line in battlefield_block.splitlines()]
+
+        tiles = []
+        for row in battlefield_rows:
+            row_tiles = []
+            for ch in row:
+                if ch == "W":
+                    row_tiles.append(Wall())
+                elif ch == " ":
+                    row_tiles.append(Floor())
+                elif ch == "R":
+                    row_tiles.append(Rock(False))
+                elif ch == "X":
+                    row_tiles.append(Rock(True))
+                else:
+                    raise ValueError(INVALID_TILE_MSG)
+            tiles.append(row_tiles)
+
+        battlefield = Battlefield(tiles)
+
+        entity_lines = [ln.strip() for ln in entities_block.splitlines() if ln.strip() != ""]
+        if len(entity_lines) == 0:
+            raise ValueError(INVALID_PLAYER_MSG)
+
+        # Parse player
+        player_line = entity_lines[0]
+        parts = [p.strip() for p in player_line.split(",")]
+        if len(parts) < 7 or parts[0] != Player.TANK_ID:
+            raise ValueError(INVALID_PLAYER_MSG)
+
+        try:
+            prow, pcol = int(parts[1]), int(parts[2])
+            phr, phc = int(parts[3]), int(parts[4])
+            pspeed = int(parts[5])
+            parmour = int(parts[6])
+            player = Player((prow, pcol), (phr, phc), pspeed, parmour)
+        except Exception:
+            raise ValueError(INVALID_PLAYER_MSG)
+
+        # Parse enemies
+        enemies = []
+        for line in entity_lines[1:]:
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) < 6:
+                raise ValueError(INVALID_ENEMY_MSG)
+            eid = parts[0]
+            try:
+                erow, ecol = int(parts[1]), int(parts[2])
+                ehr, ehc = int(parts[3]), int(parts[4])
+                espeed = int(parts[5])
+            except Exception:
+                raise ValueError(INVALID_ENEMY_MSG)
+
+            if eid == Guard.TANK_ID:
+                enemies.append(Guard((erow, ecol), (ehr, ehc), espeed))
+            elif eid == Patrol.TANK_ID:
+                enemies.append(Patrol((erow, ecol), (ehr, ehc), espeed))
+            else:
+                raise ValueError(INVALID_ENEMY_MSG)
+
+        return cls(battlefield, player, enemies)
+
+    @classmethod
+    def load_from_file(cls, file: str) -> "WTModel":
+        """Load WTModel from a file."""
+        try:
+            with open(file, "r", encoding="utf-8") as fh:
+                content = fh.read().rstrip("\n")
+        except FileNotFoundError:
+            raise ValueError(FILE_NOT_FOUND_MSG)
+        try:
+            return cls.from_str(content)
+        except ValueError as err:
+            text = str(err)
+            if INVALID_TILE_MSG in text:
+                raise ValueError(INVALID_TILE_MSG)
+            elif INVALID_PLAYER_MSG in text:
+                raise ValueError(INVALID_PLAYER_MSG)
+            elif INVALID_ENEMY_MSG in text:
+                raise ValueError(INVALID_ENEMY_MSG)
+            else:
+                raise
+
+
+# Backward-compatible wrapper
+def load_model(file: str) -> WTModel:
+    return WTModel.load_from_file(file)
+
+
+# --------------------- CONTROLLER ---------------------
+class WTController:
+    """Controller for We Tank! game loop."""
+
+    def __init__(self, initial_state: WTModel):
+        self._model = initial_state
+        self._view = WTView()
+
+    def __repr__(self) -> str:
+        return f"WTController({repr(self._model)})"
+
+    def __str__(self) -> str:
+        return str(self._model)
+
+    def print_game(self):
+        self._view.draw_game(
+            self._model.get_battlefield().get_tiles(),
+            self._model.get_player(),
+            self._model.get_enemies(),
+        )
+
+    def load_game(self, file: str):
+        try:
+            self._model = load_model(file)
+            print(LOAD_MSG)
+            self.print_game()
+        except ValueError as e:
+            print(str(e))
+
+    def save_game(self, file: str):
+        with open(file, "w", encoding="utf-8") as f:
+            f.write(str(self._model))
+        print(SAVE_MSG)
+
+    def get_command(self) -> str:
+        valid_commands = [
+            MOVE + " " + FORWARD,
+            MOVE + " " + BACK,
+            TURN + " " + LEFT,
+            TURN + " " + RIGHT,
+            FIRE,
+            WAIT,
+            HELP,
+            QUIT,
+        ]
+        while True:
+            command = input(COMMAND_PROMPT)
+            lower_cmd = command.lower()
+            if lower_cmd.startswith(SAVE + " ") or lower_cmd.startswith(LOAD + " "):
+                return lower_cmd
+            if lower_cmd in valid_commands:
+                return lower_cmd
+            print(INVALID_COMMAND_MSG)
+
+    def play(self):
+        self.print_game()
+        print(WELCOME_MSG)
+        while not self._model.is_game_over():
+            cmd = self.get_command()
+            if cmd == QUIT:
+                return
+            elif cmd == HELP:
+                print(HELP_MSG)
+                continue
+            elif cmd == MOVE + " " + FORWARD:
+                self._model.player_move("forward")
+            elif cmd == MOVE + " " + BACK:
+                self._model.player_move("back")
+            elif cmd == TURN + " " + LEFT:
+                self._model.player_move("left")
+            elif cmd == TURN + " " + RIGHT:
+                self._model.player_move("right")
+            elif cmd == FIRE:
+                self._model.player_fire()
+            elif cmd == WAIT:
+                pass
+            elif cmd.startswith(SAVE + " "):
+                filename = cmd.split(maxsplit=1)[1]
+                self.save_game(filename)
+                continue
+            elif cmd.startswith(LOAD + " "):
+                filename = cmd.split(maxsplit=1)[1]
+                self.load_game(filename)
+                continue
+
+            # Enemy actions after player's turn
+            if not self._model.is_game_over():
+                self._model.enemy_actions()
+                self.print_game()
+
+        # Game over messages
+        if self._model.has_won():
+            self.print_game()
+            print(WIN_MSG)
+        else:
+            print(LOSE_MSG)
+
+
+# --------------------- HELPER FUNCTION ---------------------
+def play_game(file: str):
+    """
+    Load a WTModel from file, create a controller, and play the game.
+    """
+    model = load_model(file)
+    controller = WTController(model)
+    controller.play()
