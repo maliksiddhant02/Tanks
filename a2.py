@@ -420,102 +420,92 @@ class WTModel:
     def is_game_over(self) -> bool:
         return self.has_won() or self.has_lost()
 
+
     # --------------------- File I/O ---------------------
-    @classmethod
-    def from_str(cls, s: str) -> "WTModel":
-        """Construct WTModel from string representation."""
-        parts = s.split("\n\n", 1)
-        if len(parts) != 2:
-            raise ValueError(INVALID_TILE_MSG)
-
-        battlefield_block, entities_block = parts
-        battlefield_rows = [line.rstrip("\n") for line in battlefield_block.splitlines()]
-
-        tiles = []
-        for row in battlefield_rows:
-            row_tiles = []
-            for ch in row:
-                if ch == "W":
-                    row_tiles.append(Wall())
-                elif ch == " ":
-                    row_tiles.append(Floor())
-                elif ch == "R":
-                    row_tiles.append(Rock(False))
-                elif ch == "X":
-                    row_tiles.append(Rock(True))
-                else:
-                    raise ValueError(INVALID_TILE_MSG)
-            tiles.append(row_tiles)
-
-        battlefield = Battlefield(tiles)
-
-        entity_lines = [ln.strip() for ln in entities_block.splitlines() if ln.strip() != ""]
-        if len(entity_lines) == 0:
-            raise ValueError(INVALID_PLAYER_MSG)
-
-        # Parse player
-        player_line = entity_lines[0]
-        parts = [p.strip() for p in player_line.split(",")]
-        if len(parts) < 7 or parts[0] != Player.TANK_ID:
-            raise ValueError(INVALID_PLAYER_MSG)
-
-        try:
-            prow, pcol = int(parts[1]), int(parts[2])
-            phr, phc = int(parts[3]), int(parts[4])
-            pspeed = int(parts[5])
-            parmour = int(parts[6])
-            player = Player((prow, pcol), (phr, phc), pspeed, parmour)
-        except Exception:
-            raise ValueError(INVALID_PLAYER_MSG)
-
-        # Parse enemies
-        enemies = []
-        for line in entity_lines[1:]:
-            parts = [p.strip() for p in line.split(",")]
-            if len(parts) < 6:
-                raise ValueError(INVALID_ENEMY_MSG)
-            eid = parts[0]
-            try:
-                erow, ecol = int(parts[1]), int(parts[2])
-                ehr, ehc = int(parts[3]), int(parts[4])
-                espeed = int(parts[5])
-            except Exception:
-                raise ValueError(INVALID_ENEMY_MSG)
-
-            if eid == Guard.TANK_ID:
-                enemies.append(Guard((erow, ecol), (ehr, ehc), espeed))
-            elif eid == Patrol.TANK_ID:
-                enemies.append(Patrol((erow, ecol), (ehr, ehc), espeed))
-            else:
-                raise ValueError(INVALID_ENEMY_MSG)
-
-        return cls(battlefield, player, enemies)
-
-    @classmethod
-    def load_from_file(cls, file: str) -> "WTModel":
-        """Load WTModel from a file."""
-        try:
-            with open(file, "r", encoding="utf-8") as fh:
-                content = fh.read().rstrip("\n")
-        except FileNotFoundError:
-            raise ValueError(FILE_NOT_FOUND_MSG)
-        try:
-            return cls.from_str(content)
-        except ValueError as err:
-            text = str(err)
-            if INVALID_TILE_MSG in text:
-                raise ValueError(INVALID_TILE_MSG)
-            elif INVALID_PLAYER_MSG in text:
-                raise ValueError(INVALID_PLAYER_MSG)
-            elif INVALID_ENEMY_MSG in text:
-                raise ValueError(INVALID_ENEMY_MSG)
-            else:
-                raise
-
-
-# Backward-compatible wrapper
 def load_model(file: str) -> WTModel:
-    return WTModel.load_from_file(file)
+    """
+    Load a WTModel instance from the specified file.
+
+    The file must follow the string representation format of a WTModel.
+    Raises:
+        ValueError: if the file contains invalid tiles, player, or enemy data.
+        FileNotFoundError: if the file does not exist (not caught here).
+    """
+    # Read file contents (no file-not-found handling per spec)
+    with open(file, "r", encoding="utf-8") as fh:
+        content = fh.read().rstrip("\n")
+
+    # Split battlefield and entities
+    parts = content.split("\n\n", 1)
+    if len(parts) != 2:
+        raise ValueError(INVALID_TILE_MSG)
+
+    battlefield_block, entities_block = parts
+    battlefield_rows = [line.rstrip("\n") for line in battlefield_block.splitlines()]
+
+    # --- Build battlefield ---
+    tiles: list[list[Tile]] = []
+    for row in battlefield_rows:
+        row_tiles: list[Tile] = []
+        for ch in row:
+            if ch == "W":
+                row_tiles.append(Wall())
+            elif ch == " ":
+                row_tiles.append(Floor())
+            elif ch == "R":
+                row_tiles.append(Rock(False))
+            elif ch == "X":
+                row_tiles.append(Rock(True))
+            else:
+                raise ValueError(INVALID_TILE_MSG)
+        tiles.append(row_tiles)
+
+    battlefield = Battlefield(tiles)
+
+    # --- Parse entities ---
+    entity_lines = [ln.strip() for ln in entities_block.splitlines() if ln.strip()]
+    if not entity_lines:
+        raise ValueError(INVALID_PLAYER_MSG)
+
+    # Player line
+    player_line = entity_lines[0]
+    parts = [p.strip() for p in player_line.split(",")]
+    if len(parts) < 7 or parts[0] != Player.TANK_ID:
+        raise ValueError(INVALID_PLAYER_MSG)
+
+    try:
+        prow, pcol = int(parts[1]), int(parts[2])
+        phr, phc = int(parts[3]), int(parts[4])
+        pspeed = int(parts[5])
+        parmour = int(parts[6])
+        player = Player((prow, pcol), (phr, phc), pspeed, parmour)
+    except Exception:
+        raise ValueError(INVALID_PLAYER_MSG)
+
+    # Enemy lines
+    enemies: list[Enemy] = []
+    for line in entity_lines[1:]:
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) < 6:
+            raise ValueError(INVALID_ENEMY_MSG)
+        eid = parts[0]
+        try:
+            erow, ecol = int(parts[1]), int(parts[2])
+            ehr, ehc = int(parts[3]), int(parts[4])
+            espeed = int(parts[5])
+        except Exception:
+            raise ValueError(INVALID_ENEMY_MSG)
+
+        if eid == Guard.TANK_ID:
+            enemies.append(Guard((erow, ecol), (ehr, ehc), espeed))
+        elif eid == Patrol.TANK_ID:
+            enemies.append(Patrol((erow, ecol), (ehr, ehc), espeed))
+        else:
+            raise ValueError(INVALID_ENEMY_MSG)
+
+    # Return fully constructed model
+    return WTModel(battlefield, player, enemies)
+
 
 
 # --------------------- CONTROLLER ---------------------
@@ -540,16 +530,33 @@ class WTController:
         )
 
     def load_game(self, file: str):
+        """
+        Replace the current game state with the state contained in the given file.
+        Raises:
+            ValueError: if the file cannot be found or the contents are invalid.
+        """
         try:
+            # Try to load using load_model
             self._model = load_model(file)
             print(LOAD_MSG)
-            self.print_game()
-        except ValueError as e:
-            print(str(e))
 
-    def save_game(self, file: str):
-        with open(file, "w", encoding="utf-8") as f:
-            f.write(str(self._model))
+        except FileNotFoundError:
+            # Convert file-not-found to a ValueError with correct message
+            raise ValueError(FILE_NOT_FOUND_MSG)
+
+        except ValueError as e:
+            # Reraise any ValueError (invalid tiles, player, or enemy data)
+            raise
+    
+    def save_game(self, file: str) -> None:
+        """
+        Save the current WTModel state to a file.
+
+        Args:
+            file (str): The file path to save the model into.
+        """
+        with open(file, "w", encoding="utf-8") as fh:
+            fh.write(str(self._model))
         print(SAVE_MSG)
 
     def get_command(self) -> str:
@@ -600,7 +607,12 @@ class WTController:
                 continue
             elif cmd.startswith(LOAD + " "):
                 filename = cmd.split(maxsplit=1)[1]
-                self.load_game(filename)
+                try:
+                    self.load_game(filename)
+                    self.print_game()
+                except ValueError as e:
+                    # Catch and print the error message (e.g., "Cannot locate the desired file!")
+                    print(e)
                 continue
 
             # Enemy actions after player's turn
